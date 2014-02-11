@@ -1,5 +1,9 @@
 #include <windows.h>
 
+#define IDC_MAIN_BUTTON	101			// Button identifier
+#define IDC_MAIN_EDIT	102			// Edit box identifier
+#define IDC_EXIT_BUTTON 103
+
 LRESULT CALLBACK WinProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam);
 
 int WINAPI WinMain(HINSTANCE hInst,HINSTANCE hPrevInst,LPSTR lpCmdLine,int nShowCmd)
@@ -23,7 +27,7 @@ int WINAPI WinMain(HINSTANCE hInst,HINSTANCE hPrevInst,LPSTR lpCmdLine,int nShow
 	{
 		int nResult=GetLastError();
 		MessageBox(NULL,
-			"Window class creation failed",
+			"Window class creation failed\r\n",
 			"Window Class Failed",
 			MB_ICONERROR);
 	}
@@ -46,12 +50,12 @@ int WINAPI WinMain(HINSTANCE hInst,HINSTANCE hPrevInst,LPSTR lpCmdLine,int nShow
 		int nResult=GetLastError();
 
 		MessageBox(NULL,
-			"Window creation failed",
+			"Window creation failed\r\n",
 			"Window Creation Failed",
 			MB_ICONERROR);
 	}
 
-	ShowWindow(hWnd,nShowCmd);
+    ShowWindow(hWnd,nShowCmd);
 
 	MSG msg;
 	ZeroMemory(&msg,sizeof(MSG));
@@ -67,8 +71,99 @@ int WINAPI WinMain(HINSTANCE hInst,HINSTANCE hPrevInst,LPSTR lpCmdLine,int nShow
 
 LRESULT CALLBACK WinProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam)
 {
+    static HWND hEdit;
 	switch(msg)
 	{
+		case WM_CREATE:
+		{
+			// Create an edit box
+			hEdit=CreateWindowEx(WS_EX_CLIENTEDGE,
+				"EDIT",
+				"",
+				WS_CHILD|WS_VISIBLE|
+				ES_MULTILINE|ES_AUTOVSCROLL|ES_AUTOHSCROLL,
+				50,
+				100,
+				200,
+				100,
+				hWnd,
+				(HMENU)IDC_MAIN_EDIT,
+				GetModuleHandle(NULL),
+				NULL);
+			HGDIOBJ hfDefault=GetStockObject(DEFAULT_GUI_FONT);
+			SendMessage(hEdit,
+				WM_SETFONT,
+				(WPARAM)hfDefault,
+				MAKELPARAM(FALSE,0));
+			SendMessage(hEdit,
+				WM_SETTEXT,
+				NULL,
+				(LPARAM)"Enter your name here...");
+
+			// Create a push button
+			HWND hWndButton=CreateWindowEx(NULL,
+				"BUTTON",
+				"OK",
+				WS_TABSTOP|WS_VISIBLE|
+				WS_CHILD|BS_DEFPUSHBUTTON,
+				50,
+				220,
+				100,
+				24,
+				hWnd,
+				(HMENU)IDC_MAIN_BUTTON,
+				GetModuleHandle(NULL),
+				NULL);
+			SendMessage(hWndButton,
+				WM_SETFONT,
+				(WPARAM)hfDefault,
+				MAKELPARAM(FALSE,0));
+
+            HWND hWndExit=CreateWindowEx(NULL,
+				"BUTTON",
+				"EXIT",
+				WS_TABSTOP|WS_VISIBLE|
+				WS_CHILD|BS_DEFPUSHBUTTON,
+				300,
+				400,
+				50,
+				24,
+				hWnd,
+				(HMENU)IDC_EXIT_BUTTON,
+				GetModuleHandle(NULL),
+				NULL);
+			SendMessage(hWndButton,
+				WM_SETFONT,
+				(WPARAM)hfDefault,
+				MAKELPARAM(FALSE,0));
+		}
+		break;
+
+		case WM_COMMAND:
+			switch(LOWORD(wParam))
+            {
+            case IDC_MAIN_BUTTON:
+            {
+                char buffer[256];
+                SendMessage(hEdit,
+                WM_GETTEXT,
+                sizeof(buffer)/sizeof(buffer[0]),
+                reinterpret_cast<LPARAM>(buffer));
+                MessageBox(NULL,
+                buffer,
+                "Your name",
+                MB_ICONQUESTION | MB_YESNO);
+            }
+            break;
+            case IDC_EXIT_BUTTON:
+            {
+                PostQuitMessage(0);
+                return 0;
+            }
+            break;
+        }
+        break;
+
 		case WM_DESTROY:
 		{
 			PostQuitMessage(0);
